@@ -1,35 +1,58 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const CLIENT_ID = "26ad3730a5814e25b7285eab249f372e";
+  const REDIRECT_URI = "http://localhost:5173/";
+  const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
+  const RESPONSE_TYPE = "token";
+
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    let storageToken: string | null = window.localStorage.getItem("token");
+
+    // Check for token in localStorage or URL hash
+    if (!storageToken && hash) {
+      storageToken =
+        hash
+          .substring(1)
+          .split("&")
+          .find((elem) => elem.startsWith("access_token"))
+          ?.split("=")[1] || null;
+
+      window.location.hash = ""; // Clear the hash
+      if (storageToken) {
+        window.localStorage.setItem("token", storageToken);
+        setToken(storageToken); // Update state with the new token
+      }
+    } else {
+      setToken(storageToken); // Set state if token exists in localStorage
+    }
+  }, []);
+
+  const handleLogout = () => {
+    setToken(null); // Clear token state
+    window.localStorage.removeItem("token"); // Remove token from localStorage
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div className="text-warning bg-dark">
+        <h1>Spotify playlist randomizer</h1>
+        {!token ? (
+          <a
+            href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE} `}
+          >
+            Login to Spotify
+          </a>
+        ) : (
+          <button onClick={handleLogout}>Logout</button> // Add onClick for logout
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
